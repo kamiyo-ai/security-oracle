@@ -10,8 +10,7 @@ export class RiskDetector {
   constructor(dataService: DataService) {
     this.dataService = dataService;
     this.knownScamAddresses = new Set([
-      // Known scam/malicious addresses can be added here
-      // This would typically be loaded from a database or API
+      // TODO: Load from database
     ]);
   }
 

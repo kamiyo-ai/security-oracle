@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: risk-auditor
+    env: node
+    buildCommand: npm install && npm install --save-dev @types/express @types/cors @types/node && npm run build
+    startCommand: node dist/src/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: PAYMENT_WALLET
+        value: CE4BW1g1vuaS8hRQAGEABPi5PCuKBfJUporJxmdinCsY
+      - key: SOLANA_RPC_URL
+        value: https://api.mainnet-beta.solana.com
+      - key: LOG_LEVEL
+        value: info

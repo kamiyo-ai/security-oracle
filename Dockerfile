@@ -21,4 +21,4 @@ EXPOSE 3000
 
 ENV NODE_ENV=production
 
-CMD ["node", "dist/agent.js"]
+CMD ["node", "dist/src/index.js"]
