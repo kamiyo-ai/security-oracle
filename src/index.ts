@@ -1,5 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { DataService } from './services/data-service.js';
 import { ApprovalsRouteHandler } from './routes/approvals.js';
 import { logger } from './utils/logger.js';
@@ -18,6 +20,9 @@ import {
   riskScoreQuerySchema,
 } from './validation/schemas.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 
 app.use(securityHeadersMiddleware);
@@ -25,6 +30,9 @@ app.use(requestIdMiddleware);
 app.use(cors());
 app.use(express.json());
 app.use(rateLimitMiddleware({ windowMs: 60000, maxRequests: 60 }));
+
+// Serve static files (favicon, OG image)
+app.use('/public', express.static(path.join(__dirname, '../public')));
 
 const dataService = new DataService();
 const approvalsHandler = new ApprovalsRouteHandler(dataService);
@@ -144,51 +152,126 @@ function calculateRiskScore(
 }
 
 app.get('/', (req: Request, res: Response) => {
-  res.json({
-    name: 'KAMIYO Risk Auditor',
-    description:
-      'Token approval auditing and DeFi security intelligence with x402 payments',
-    version: '3.0.0',
-    x402: {
-      enabled: true,
-      version: 1,
-      network: 'solana-mainnet',
-      paymentWallet: PAYMENT_WALLET,
-      pricePerRequest: `${PRICE_PER_REQUEST_SOL} SOL`,
-    },
-    endpoints: [
-      {
-        path: '/approval-audit',
-        method: 'GET',
-        description: 'Audit wallet token approvals and identify risks',
-        parameters: ['wallet', 'chains'],
-        payment: 'x402 required',
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+  // Return HTML with metadata for browser requests
+  if (req.headers.accept?.includes('text/html')) {
+    res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KAMIYO Risk Auditor - Token Approval Security Scanner</title>
+  <meta name="description" content="Token approval security scanner for EVM chains with x402 micropayments. Scan wallets for risky approvals, get exploit intelligence, and calculate protocol risk scores.">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="KAMIYO Risk Auditor">
+  <meta property="og:description" content="Token approval security scanner for EVM chains with x402 micropayments on Solana">
+  <meta property="og:image" content="${baseUrl}/public/og-image.png">
+  <meta property="og:url" content="${baseUrl}">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="KAMIYO Risk Auditor">
+  <meta name="twitter:description" content="Token approval security scanner for EVM chains with x402 micropayments">
+  <meta name="twitter:image" content="${baseUrl}/public/og-image.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="${baseUrl}/public/favicon.png">
+
+  <style>
+    body { font-family: system-ui; max-width: 800px; margin: 50px auto; padding: 20px; line-height: 1.6; }
+    h1 { color: #00D4AA; }
+    pre { background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    .endpoint { margin: 20px 0; padding: 15px; border-left: 3px solid #00D4AA; background: #f9f9f9; }
+  </style>
+</head>
+<body>
+  <h1>🛡️ KAMIYO Risk Auditor</h1>
+  <p>Token approval security scanner for EVM chains with x402 micropayments on Solana.</p>
+
+  <h2>API Endpoints</h2>
+
+  <div class="endpoint">
+    <strong>GET /approval-audit</strong>
+    <p>Scan wallet for risky token approvals</p>
+    <code>?wallet=0x...&chains=ethereum,polygon,base</code>
+  </div>
+
+  <div class="endpoint">
+    <strong>GET /exploits</strong>
+    <p>Get recent DeFi exploit intelligence</p>
+    <code>?protocol=uniswap&chain=ethereum&limit=50</code>
+  </div>
+
+  <div class="endpoint">
+    <strong>GET /risk-score/:protocol</strong>
+    <p>Calculate protocol risk score (0-100)</p>
+    <code>/risk-score/aave?chain=ethereum</code>
+  </div>
+
+  <h2>x402 Payment</h2>
+  <p>All endpoints require x402 payment: <strong>0.001 SOL per request</strong></p>
+  <p>Payment wallet: <code>${PAYMENT_WALLET}</code></p>
+
+  <h2>Discovery</h2>
+  <p><a href="/.well-known/x402">/.well-known/x402</a> - x402 protocol schema</p>
+  <p><a href="/health">/health</a> - Service health check</p>
+
+  <h2>Documentation</h2>
+  <p><a href="https://github.com/kamiyo-ai/risk-auditor">GitHub Repository</a></p>
+  <p><a href="https://www.x402scan.com">x402scan Explorer</a></p>
+</body>
+</html>`);
+  } else {
+    // Return JSON for API requests
+    res.json({
+      name: 'KAMIYO Risk Auditor',
+      description:
+        'Token approval auditing and DeFi security intelligence with x402 payments',
+      version: '3.0.0',
+      x402: {
+        enabled: true,
+        version: 1,
+        network: 'solana-mainnet',
+        paymentWallet: PAYMENT_WALLET,
+        pricePerRequest: `${PRICE_PER_REQUEST_SOL} SOL`,
       },
-      {
-        path: '/exploits',
-        method: 'GET',
-        description: 'Get recent exploit data',
-        parameters: ['protocol', 'chain', 'limit'],
-        payment: 'x402 required',
-      },
-      {
-        path: '/risk-score/:protocol',
-        method: 'GET',
-        description: 'Calculate risk score for a protocol',
-        parameters: ['protocol', 'chain'],
-        payment: 'x402 required',
-      },
-      {
-        path: '/health',
-        method: 'GET',
-        description: 'Service health check',
-        payment: 'none',
-      },
-    ],
-    documentation:
-      'https://github.com/kamiyo-ai/security-oracle',
-    powered_by: 'KAMIYO Security Intelligence',
-  });
+      endpoints: [
+        {
+          path: '/approval-audit',
+          method: 'GET',
+          description: 'Audit wallet token approvals and identify risks',
+          parameters: ['wallet', 'chains'],
+          payment: 'x402 required',
+        },
+        {
+          path: '/exploits',
+          method: 'GET',
+          description: 'Get recent exploit data',
+          parameters: ['protocol', 'chain', 'limit'],
+          payment: 'x402 required',
+        },
+        {
+          path: '/risk-score/:protocol',
+          method: 'GET',
+          description: 'Calculate risk score for a protocol',
+          parameters: ['protocol', 'chain'],
+          payment: 'x402 required',
+        },
+        {
+          path: '/health',
+          method: 'GET',
+          description: 'Service health check',
+          payment: 'none',
+        },
+      ],
+      documentation:
+        'https://github.com/kamiyo-ai/risk-auditor',
+      powered_by: 'KAMIYO Security Intelligence',
+    });
+  }
 });
 
 app.all('/.well-known/x402', (req: Request, res: Response) => {
