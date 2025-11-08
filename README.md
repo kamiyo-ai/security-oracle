@@ -177,6 +177,25 @@ Wallet: `CE4BW1g1vuaS8hRQAGEABPi5PCuKBfJUporJxmdinCsY`
 
 Payment signature cached for 1 hour (multiple requests per transaction).
 
+## x402scan Discovery
+
+Risk Auditor is discoverable on [x402scan.com](https://www.x402scan.com) - the x402 ecosystem explorer.
+
+**Live Endpoint:** https://risk-auditor.kamiyo.ai
+
+The service implements the x402 discovery protocol via `/.well-known/x402`, exposing three resources:
+
+1. **Approval Audit** - Scan wallet token approvals for security risks
+2. **Exploit Intelligence** - Query 20+ sources for DeFi exploit data
+3. **Risk Scoring** - Calculate protocol risk based on exploit history
+
+All endpoints accept x402 payments (0.001 SOL per request) and return structured JSON with security intelligence.
+
+To register on x402scan:
+1. Visit https://www.x402scan.com/resources/register
+2. Submit URL: `https://risk-auditor.kamiyo.ai`
+3. The registry auto-validates the x402 schema
+
 ## Development
 
 ```bash
